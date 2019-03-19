@@ -282,7 +282,7 @@ dependencies = [
 
 [[package]]
 name = "ul"
-version = "0.1.0"
+version = "1.0.0-pre"
 dependencies = [
  "image 0.21.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ul-sys 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",

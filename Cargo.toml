@@ -5,8 +5,10 @@ name = "ul"
 version = "1.0.0-pre"
 
 [dependencies]
-image = "0.21.0"
 ul-sys = "1.0.0"
+
+[target.'cfg(feature = "image")'.dependencies]
+image = "0.21.0"
 
 [profile]
 

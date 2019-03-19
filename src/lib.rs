@@ -11,7 +11,10 @@
 #[cfg(feature = "image")]
 extern crate image;
 
-extern crate ul_sys as ul;
+#[cfg(feature = "image")]
+use image::ImageBuffer;
+
+pub extern crate ul_sys as ul;
 pub mod helpers;
 pub mod config;
 
@@ -22,12 +25,8 @@ use helpers::{
 };
 
 use std::{
-    cell::{
-        RefCell
-    },
     option::NoneError,
     os::raw::c_void,
-    time::Duration,
 };
 
 mod helpers_internal;
@@ -35,9 +34,6 @@ use helpers_internal::{
     log_forward_cb,
     unpack_closure_view_cb,
 };
-
-use crate::ul::JSValueRef;
-use image::ImageBuffer;
 
 pub type Renderer = ul::ULRenderer;
 pub type View = ul::ULView;
