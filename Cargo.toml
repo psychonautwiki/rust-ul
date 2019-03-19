@@ -1,0 +1,27 @@
+[package]
+authors = ["Kenan Sulayman <kenan@sly.mn>"]
+edition = "2018"
+name = "ul"
+version = "0.1.0"
+
+[dependencies]
+image = "0.21.0"
+ul-sys = "1.0.0"
+
+[profile]
+
+[profile.dev]
+codegen-units = 1
+debug = true
+debug-assertions = true
+lto = false
+opt-level = 0
+panic = "unwind"
+rpath = true
+
+[profile.release]
+debug = false
+debug-assertions = false
+opt-level = 3
+panic = "abort"
+rpath = true
