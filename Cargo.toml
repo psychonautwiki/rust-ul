@@ -4,6 +4,7 @@ authors = ["Kenan Sulayman <kenan@sly.mn>"]
 edition = "2018"
 description = "High Level Bindings to Ultralight SDK"
 version = "1.0.0-pre2"
+license = "MIT"
 
 repository = "https://github.com/psychonautwiki/rust-ul"
 documentation = "https://docs.rs/ul/latest/ul/"
