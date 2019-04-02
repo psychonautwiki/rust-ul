@@ -35,9 +35,170 @@ use helpers_internal::{
     unpack_closure_view_cb,
 };
 
+pub type App = ul::ULApp;
+pub type Config = config::UltralightConfig;
+pub type Monitor = ul::ULMonitor;
+pub type Overlay = ul::ULOverlay;
 pub type Renderer = ul::ULRenderer;
 pub type View = ul::ULView;
-pub type Config = config::UltralightConfig;
+pub type Window = ul::ULWindow;
+
+/*
+    Current flow
+
+    initialize using
+        - None as renderer
+            -> initialize empty config, create new renderer
+        - Some renderer
+            -> initialize view using renderer
+
+    Desired flow
+
+    - Create clear API for instanciating an app from AppCore
+      using a new UltralightApp (?) impl that initializes
+      all requirements of an AppCore instance:
+
+        - initialize empty config
+        - initialize app
+        - obtain monitor from app
+            - uses macOS internal APIs to resolve "main" monitor,
+              which always becomes the currently focused oned
+        - create window monitor using
+            width,
+            height,
+            fullscreen-flag,
+            configuration bitmap:
+                  borderless = 1 << 0,
+                  titled = 1 << 1,
+                  resizable = 1 << 2,
+                  maximizable = 1 << 3,
+
+                  0b0000
+                    ^^^^
+        - Configure app using created window on monitor
+          via ulAppSetWindow
+        - Obtain renderer from app via ulAppGetRenderer
+*/
+
+/*
+
+    let config = ul::ulCreateConfig(); -> config
+
+    let app = ul::ulCreateApp(config); -> app
+    let monitor = ul::ulAppGetMainMonitor(app); -> monitor
+
+    let (width, height): (u32, u32) = (1280, 768);
+
+    let window = ul::ulCreateWindow(
+        monitor, width, height, false, 0b0110
+    ); -> window
+
+    ul::ulAppSetWindow(app, window); -> void
+
+    let renderer = ul::ulAppGetRenderer(app); -> renderer
+*/
+
+pub struct UltralightApp {
+    config: Config,
+    app: App,
+    // check if we really want to store
+    // the monitor instance here as
+    // in the future we might be able
+    // to obtain a non-main monitor
+    monitor: Monitor,
+    overlay: Option<Overlay>,
+    window: Option<Window>
+}
+
+impl UltralightApp {
+    pub fn new(config: Option<Config>) -> UltralightApp {
+        let ulconfig = match config {
+            Some(config) => config,
+            None => Config::new()
+        };
+
+        unsafe {
+            let app = ul::ulCreateApp(ulconfig.to_ulconfig());
+            let monitor = ul::ulAppGetMainMonitor(app);
+
+            UltralightApp {
+                config: ulconfig,
+                app,
+                monitor,
+                window: None,
+                overlay: None,
+            }
+        }
+    }
+
+    pub fn window(
+        &mut self,
+        height: u32,
+        width: u32,
+        fullscreen: bool,
+        borderless: bool,
+        titled: bool,
+        resizable: bool,
+        maximizable: bool,
+    ) {
+        let mut window_flags = 0u32;
+
+        if borderless {
+            window_flags ^= 0b0001;
+        }
+
+        if titled {
+            window_flags ^= 0b0010;
+        }
+
+        if resizable {
+            window_flags ^= 0b0100;
+        }
+
+        if maximizable {
+            window_flags ^= 0b1000;
+        }
+
+        let window = unsafe {
+            ul::ulCreateWindow(
+                self.monitor,
+                height,
+                width,
+                fullscreen,
+                window_flags
+            )
+        };
+
+        unsafe {
+            ul::ulAppSetWindow(self.app, window);
+        }
+
+        let overlay = unsafe {
+            ul::ulCreateOverlay(window, width, height, 0, 0)
+        };
+
+        self.window = Some(window);
+        self.overlay = Some(overlay);
+    }
+
+    pub fn get_renderer(&mut self) -> Renderer {
+        unsafe {
+            ul::ulAppGetRenderer(self.app)
+        }
+    }
+
+    pub fn get_view(&mut self) -> Result<View, NoneError> {
+        unsafe {
+            Ok(ul::ulOverlayGetView(self.overlay?))
+        }
+    }
+
+    pub fn run(&mut self) {
+        unsafe {
+            ul::ulAppRun(self.app);
+        }
+    }
+}
 
 pub struct Ultralight {
     config: Config,
@@ -65,6 +226,12 @@ impl Ultralight {
             config: ulconfig,
             renderer: used_renderer,
             view: None
+        }
+    }
+
+    pub fn set_view(&mut self, view: View) {
+        unsafe {
+            self.view = Some(view);
         }
     }
 
