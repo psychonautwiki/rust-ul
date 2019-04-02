@@ -9,6 +9,31 @@ use std::{
     },
 };
 
+pub unsafe fn ul_string(stref: &str) -> ul::ULString {
+    let cstr = std::ffi::CString::new(
+        stref
+    ).unwrap();
+
+    ul::ulCreateString(
+        cstr.as_ptr()
+    )
+}
+
+pub unsafe fn unpack_window_resize_cb<F>(closure: &mut F) -> (*mut c_void, unsafe extern "C" fn(*mut c_void, width: u32, height: u32))
+    where
+        F: FnMut(u32, u32),
+{
+    extern "C" fn trampoline<F>(data: *mut c_void, width: u32, height: u32)
+        where
+            F: FnMut(u32, u32),
+    {
+        let closure: &mut F = unsafe { &mut *(data as *mut F) };
+        (*closure)(width, height);
+    }
+
+    (closure as *mut F as *mut c_void, trampoline::<F>)
+}
+
 // All callbacks that accept take a (view: ULView) argument
 
 pub unsafe fn unpack_closure_view_cb<F>(closure: &mut F) -> (*mut c_void, unsafe extern "C" fn(*mut c_void, View))

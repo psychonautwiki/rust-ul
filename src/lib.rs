@@ -34,6 +34,7 @@ use helpers_internal::{
     log_forward_cb,
     unpack_closure_view_cb,
 };
+use crate::helpers_internal::unpack_window_resize_cb;
 
 pub type App = ul::ULApp;
 pub type Config = config::UltralightConfig;
@@ -193,6 +194,44 @@ impl UltralightApp {
         }
     }
 
+    pub fn set_window_title(&mut self, title: &str) -> Result<(), NoneError> {
+        unsafe {
+            ul::ulWindowSetTitle(
+                self.window?,
+                std::ffi::CString::new(title).unwrap().as_ptr()
+            );
+        }
+
+        Ok(())
+    }
+
+    pub fn resize_overlay(&self, width: u32, height: u32) -> Result<(), NoneError> {
+        unsafe {
+            ul::ulOverlayResize(self.overlay?, width, height);
+        }
+
+        Ok(())
+    }
+
+    pub fn set_window_resize_callback<T>(&self, mut cb: T) -> Result<(), NoneError>
+        where T: FnMut(u32, u32)
+    {
+        unsafe {
+            let (
+                cb_closure,
+                cb_function
+            ) = unpack_window_resize_cb(&mut cb);
+
+            ul::ulWindowSetResizeCallback(
+                self.window?,
+                Some(cb_function),
+                cb_closure
+            );
+        }
+
+        Ok(())
+    }
+
     pub fn run(&mut self) {
         unsafe {
             ul::ulAppRun(self.app);
@@ -243,15 +282,9 @@ impl Ultralight {
 
     pub fn load_url(&mut self, url: &'static str) -> Result<(), NoneError> {
         unsafe {
-            let url_str = std::ffi::CString::new(
-                url
-            ).unwrap();
+            let url_ulstr = helpers_internal::ul_string(url);
 
-            let url = ul::ulCreateString(
-                url_str.as_ptr()
-            );
-
-            ul::ulViewLoadURL(self.view?, url);
+            ul::ulViewLoadURL(self.view?, url_ulstr);
         }
 
         Ok(())
@@ -259,15 +292,9 @@ impl Ultralight {
 
     pub fn load_html(&mut self, code: &'static str) -> Result<(), NoneError> {
         unsafe {
-            let code_str = std::ffi::CString::new(
-                code
-            ).unwrap();
+            let code_ulstr = helpers_internal::ul_string(code);
 
-            let code = ul::ulCreateString(
-                code_str.as_ptr()
-            );
-
-            ul::ulViewLoadHTML(self.view?, code);
+            ul::ulViewLoadHTML(self.view?, code_ulstr);
         }
 
         Ok(())
