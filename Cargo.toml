@@ -1,20 +1,19 @@
 [package]
-name = "ul"
 authors = ["Kenan Sulayman <kenan@sly.mn>"]
-edition = "2018"
 description = "High Level Bindings to Ultralight SDK"
-version = "1.0.0-pre3"
-license = "MIT"
-readme = "readme.md"
-
-repository = "https://github.com/psychonautwiki/rust-ul"
 documentation = "https://docs.rs/ul/latest/ul/"
+edition = "2018"
+license = "MIT"
+name = "ul"
+readme = "readme.md"
+repository = "https://github.com/psychonautwiki/rust-ul"
+version = "1.0.0"
 
 [dependencies]
-ul-sys = "1.0.0"
 
-[target.'cfg(feature = "image")'.dependencies]
-image = "0.21.0"
+[dependencies.ul-sys]
+optional = false
+path = "../ul-sys/"
 
 [profile]
 
@@ -33,3 +32,8 @@ debug-assertions = false
 opt-level = 3
 panic = "abort"
 rpath = true
+
+#[target]
+#[target."cfg(feature = \"image\")"]
+#[target."cfg(feature = \"image\")".dependencies]
+#image = "0.21.0"
