@@ -10,10 +10,11 @@ repository = "https://github.com/psychonautwiki/rust-ul"
 version = "1.0.0"
 
 [dependencies]
+"ul-sys" = "1.0.1"
 
-[dependencies.ul-sys]
-optional = false
-path = "../ul-sys/"
+#[dependencies.ul-sys]
+#optional = false
+#path = "../ul-sys/"
 
 [profile]
 

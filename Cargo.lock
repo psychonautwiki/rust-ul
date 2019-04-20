@@ -2,12 +2,15 @@
 # It is not intended for manual editing.
 [[package]]
 name = "ul"
-version = "1.0.0-pre3"
+version = "1.0.0"
 dependencies = [
- "ul-sys 1.0.1",
+ "ul-sys 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "ul-sys"
 version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
+[metadata]
+"checksum ul-sys 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "536f3d1b765b37899b813a0058ffb0b2c924ca87a0e734ccfa382c984cb50749"
