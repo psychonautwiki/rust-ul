@@ -2,7 +2,7 @@
 # It is not intended for manual editing.
 [[package]]
 name = "ul"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "ul-sys 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
