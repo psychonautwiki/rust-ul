@@ -1,46 +1,18 @@
 use crate::ul;
 
-macro_rules! config_item (
-    ($name:ident, $type:ty, $comment:expr) => (
-        #[doc = $comment]
-        pub fn $name(&mut self, flag: $type) {
-           self.$name = Some(flag);
-        }
-    )
-);
-
-macro_rules! set_config (
-    ($config: expr, $self: expr, $name:ident, $ffiName:ident) => (
-        if $self.$name.is_some() {
-            unsafe {
-                ul::$ffiName($config, $self.$name.unwrap());
-            }
-        }
-    )
-);
-
-macro_rules! set_config_str (
-    ($config: expr, $self: expr, $name:ident, $ffiName:ident) => (
-        if $self.$name.is_some() {
-            unsafe {
-                let str = ul::ulCreateString(
-                    std::ffi::CString::new(
-                        $self.$name.clone().unwrap()
-                    ).unwrap().as_ptr()
-                );
-
-                ul::$ffiName($config, str);
-            }
-        }
-    )
-);
-
 #[derive(Default)]
 pub struct UltralightConfig {
     enableImages: Option<bool>,
     enableJavaScript: Option<bool>,
+    forceRepaint: Option<bool>,
     useBGRAForOffscreenRendering: Option<bool>,
+
+    animationTimerDelay: Option<f64>,
     deviceScaleHint: Option<f64>,
+
+    memoryCacheSize: Option<u32>,
+    pageCacheSize: Option<u32>,
+
     fontFamilyStandard: Option<String>,
     fontFamilyFixed: Option<String>,
     fontFamilySerif: Option<String>,
@@ -54,8 +26,15 @@ impl UltralightConfig {
         UltralightConfig {
             enableImages: None,
             enableJavaScript: None,
+            forceRepaint: None,
             useBGRAForOffscreenRendering: None,
+
+            animationTimerDelay: None,
             deviceScaleHint: None,
+
+            memoryCacheSize: None,
+            pageCacheSize: None,
+
             fontFamilyStandard: None,
             fontFamilyFixed: None,
             fontFamilySerif: None,
@@ -72,8 +51,15 @@ impl UltralightConfig {
 
         set_config!(config, self, enableImages, ulConfigSetEnableImages);
         set_config!(config, self, enableJavaScript, ulConfigSetEnableJavaScript);
+        set_config!(config, self, forceRepaint, ulConfigSetForceRepaint);
         set_config!(config, self, useBGRAForOffscreenRendering, ulConfigSetUseBGRAForOffscreenRendering);
+
+        set_config!(config, self, animationTimerDelay, ulConfigSetAnimationTimerDelay);
         set_config!(config, self, deviceScaleHint, ulConfigSetDeviceScaleHint);
+
+        set_config!(config, self, memoryCacheSize, ulConfigSetMemoryCacheSize);
+        set_config!(config, self, pageCacheSize, ulConfigSetPageCacheSize);
+
         set_config_str!(config, self, fontFamilyStandard, ulConfigSetFontFamilyStandard);
         set_config_str!(config, self, fontFamilyFixed, ulConfigSetFontFamilyFixed);
         set_config_str!(config, self, fontFamilySerif, ulConfigSetFontFamilySerif);
@@ -87,7 +73,13 @@ impl UltralightConfig {
     config_item!( enableImages, bool, "Set whether images should be enabled (Default = true)" );
     config_item!( enableJavaScript, bool, "Set whether JavaScript should be eanbled (Default = true)" );
     config_item!( useBGRAForOffscreenRendering, bool, "Set whether we should use BGRA byte order (instead of RGBA) for View bitmaps. (Default = false)" );
+
+    config_item!( animationTimerDelay, f64, "Set the amount of time to wait before triggering another repaint when a CSS animation is active. (Default = 1.0 / 60.0)" );
     config_item!( deviceScaleHint, f64, "Set the amount that the application DPI has been scaled, used for oversampling raster shapes. (Default = 1f64)" );
+
+    config_item!( memoryCacheSize, u32, "Set the size of WebCore's memory cache for decoded images, scripts, and other assets in bytes. (Default = 64 * 1024 * 1024)" );
+    config_item!( pageCacheSize, u32, "Set the number of pages to keep in the cache. (Default = 0)" );
+
     config_item!( fontFamilyStandard, String, "Set default font-family to use (Default = Times New Roman)" );
     config_item!( fontFamilyFixed, String, "Set default font-family to use for fixed fonts, eg pre and code tags. (Default = Courier New)" );
     config_item!( fontFamilySerif, String, "Set default font-family to use for serif fonts. (Default = Times New Roman)" );

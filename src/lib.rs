@@ -7,14 +7,14 @@
     unused_must_use
 )]
 
-#[cfg(feature = "image")]
-extern crate image;
-
-#[cfg(feature = "image")]
-use image::ImageBuffer;
-
 pub extern crate ul_sys as ul;
+
+#[macro_use]
+mod config_macros;
+
 pub mod config;
+pub mod settings;
+
 pub mod helpers;
 
 use helpers::{create_js_function, evaluate_script, set_js_object_property};
@@ -27,6 +27,7 @@ use helpers_internal::{log_forward_cb, unpack_closure_view_cb};
 
 pub type App = ul::ULApp;
 pub type Config = config::UltralightConfig;
+pub type Settings = settings::UltralightSettings;
 pub type Monitor = ul::ULMonitor;
 pub type Overlay = ul::ULOverlay;
 pub type Renderer = ul::ULRenderer;
@@ -93,6 +94,7 @@ pub struct NoneError {}
 
 pub struct UltralightApp {
     config: Config,
+    settings: Settings,
     app: App,
     // check if we really want to store
     // the monitor instance here as
@@ -104,18 +106,28 @@ pub struct UltralightApp {
 }
 
 impl UltralightApp {
-    pub fn new(config: Option<Config>) -> UltralightApp {
+    pub fn new(settings: Option<Settings>, config: Option<Config>) -> UltralightApp {
         let ulconfig = match config {
             Some(config) => config,
             None => Config::new(),
         };
 
+        let ulsettings = match settings {
+            Some(settings) => settings,
+            None => Settings::new(),
+        };
+
         unsafe {
-            let app = ul::ulCreateApp(ulconfig.to_ulconfig());
+            let app = ul::ulCreateApp(
+                ulsettings.to_ulsettings(),
+                ulconfig.to_ulconfig(),
+            );
+
             let monitor = ul::ulAppGetMainMonitor(app);
 
             UltralightApp {
                 config: ulconfig,
+                settings: ulsettings,
                 app,
                 monitor,
                 window: None,
