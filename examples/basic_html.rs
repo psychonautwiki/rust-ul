@@ -1,19 +1,35 @@
-fn main() {
-    let config = ul::Config::new();
-    let settings = ul::Settings::new();
+#![allow(dead_code, unused_must_use)]
 
-    let mut ul_app = ul::UltralightApp::new(
+use ::ul::*;
+
+fn main() {
+    let mut config = ::ul::Config::new();
+    let settings = ::ul::Settings::new();
+
+    config.deviceScaleHint(2.0);
+
+    let mut ul_app = ::ul::UltralightApp::new(
         Some(settings),
         Some(config),
     );
 
     ul_app.window(
-        500u32, 500u32, false, false, true, true, false,
+        853u32,
+        480u32,
+        false,
+        false,
+        true,
+        true,
+        false,
     );
 
-    let mut ul = ul::Ultralight::new(None, Some(ul_app.get_renderer()));
+    let mut ul = ::ul::Ultralight::new(
+        None,
+        Some(ul_app.get_renderer()),
+    );
 
-    ul.set_view(ul_app.get_view().unwrap());
+    ul.app(&mut ul_app);
+
     ul.log_to_stdout();
 
     ul.load_html(r#"
@@ -33,16 +49,16 @@ fn main() {
     // or ..
     //ul.load_url("https://sly.mn");
 
-    ul_app.resize_overlay(1024u32, 1024u32);
+    ul_app.overlay_resize(853u32, 480u32);
 
-    let mut finished = |view| println!("loaded!");
-    let mut dom_ready = |view| println!("dom ready!");
+    let mut finished = |_| println!("loaded!");
+    let mut dom_ready = |_| println!("dom ready!");
 
     ul.set_finish_loading_callback(&mut finished);
     ul.set_dom_ready_callback(&mut dom_ready);
 
-    ul_app.set_window_resize_callback(&mut |width: u32, height: u32| {
-        ul_app.resize_overlay(width, height);
+    ul_app.window_set_resize_callback(&mut |width: u32, height: u32| {
+        ul_app.overlay_resize(width, height);
     });
 
     ul_app.run();

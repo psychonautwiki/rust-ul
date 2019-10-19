@@ -22,8 +22,11 @@ use helpers::{create_js_function, evaluate_script, set_js_object_property};
 use std::os::raw::c_void;
 
 mod helpers_internal;
-use crate::helpers_internal::unpack_window_resize_cb;
+use crate::helpers_internal::{unpack_window_resize_cb, unpack_window_close_cb};
 use helpers_internal::{log_forward_cb, unpack_closure_view_cb};
+
+mod cursor;
+
 use std::ops::DerefMut;
 use std::marker::PhantomData;
 
@@ -35,6 +38,8 @@ pub type Overlay = ul::ULOverlay;
 pub type Renderer = ul::ULRenderer;
 pub type View = ul::ULView;
 pub type Window = ul::ULWindow;
+
+pub type Cursor = cursor::Cursor;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 pub struct NoneError {}
@@ -186,11 +191,131 @@ impl<'a> UltralightApp<'a> {
         unsafe { ul::ulAppGetRenderer(self.app) }
     }
 
-    pub fn get_view(&mut self) -> Result<View, NoneError> {
+    pub fn run(&mut self) {
+        unsafe {
+            ul::ulAppRun(self.app);
+        }
+    }
+}
+
+pub trait UltralightAppOverlay {
+    fn overlay_get_view(&mut self) -> Result<View, NoneError>;
+
+    fn overlay_get_height(&mut self) -> Result<u32, NoneError>;
+    fn overlay_get_width(&mut self) -> Result<u32, NoneError>;
+
+    fn overlay_get_x(&mut self) -> Result<i32, NoneError>;
+    fn overlay_get_y(&mut self) -> Result<i32, NoneError>;
+
+    fn overlay_focus(&mut self) -> Result<(), NoneError>;
+    fn overlay_unfocus(&mut self) -> Result<(), NoneError>;
+    fn overlay_has_focus(&mut self) -> Result<bool, NoneError>;
+
+    fn overlay_hide(&mut self) -> Result<(), NoneError>;
+    fn overlay_is_hidden(&mut self) -> Result<bool, NoneError>;
+
+    fn overlay_move_to(&self, x: i32, y: i32) -> Result<(), NoneError>;
+    fn overlay_resize(&self, width: u32, height: u32) -> Result<(), NoneError>;
+}
+
+impl<'a> UltralightAppOverlay for UltralightApp<'a> {
+    fn overlay_get_view(&mut self) -> Result<View, NoneError> {
         unsafe { Ok(ul::ulOverlayGetView(self.overlay.ok_or(NoneError {})?)) }
     }
 
-    pub fn set_window_title(&mut self, title: &str) -> Result<(), NoneError> {
+    fn overlay_get_height(&mut self) -> Result<u32, NoneError> {
+        unsafe { Ok(ul::ulOverlayGetHeight(self.overlay.ok_or(NoneError {})?)) }
+    }
+
+    fn overlay_get_width(&mut self) -> Result<u32, NoneError> {
+        unsafe { Ok(ul::ulOverlayGetWidth(self.overlay.ok_or(NoneError {})?)) }
+    }
+
+    fn overlay_get_x(&mut self) -> Result<i32, NoneError> {
+        unsafe { Ok(ul::ulOverlayGetX(self.overlay.ok_or(NoneError {})?)) }
+    }
+
+    fn overlay_get_y(&mut self) -> Result<i32, NoneError> {
+        unsafe { Ok(ul::ulOverlayGetY(self.overlay.ok_or(NoneError {})?)) }
+    }
+
+    fn overlay_focus(&mut self) -> Result<(), NoneError> {
+        unsafe { Ok(ul::ulOverlayFocus(self.overlay.ok_or(NoneError {})?)) }
+    }
+
+    fn overlay_unfocus(&mut self) -> Result<(), NoneError> {
+        unsafe { Ok(ul::ulOverlayUnfocus(self.overlay.ok_or(NoneError {})?)) }
+    }
+
+    fn overlay_has_focus(&mut self) -> Result<bool, NoneError> {
+        unsafe { Ok(ul::ulOverlayHasFocus(self.overlay.ok_or(NoneError {})?)) }
+    }
+
+    fn overlay_hide(&mut self) -> Result<(), NoneError> {
+        unsafe { Ok(ul::ulOverlayHide(self.overlay.ok_or(NoneError {})?)) }
+    }
+
+    fn overlay_is_hidden(&mut self) -> Result<bool, NoneError> {
+        unsafe { Ok(ul::ulOverlayIsHidden(self.overlay.ok_or(NoneError {})?)) }
+    }
+
+    fn overlay_move_to(&self, x: i32, y: i32) -> Result<(), NoneError> {
+        unsafe {
+            ul::ulOverlayMoveTo(self.overlay.ok_or(NoneError {})?, x, y);
+        }
+
+        Ok(())
+    }
+
+    fn overlay_resize(&self, width: u32, height: u32) -> Result<(), NoneError> {
+        unsafe {
+            ul::ulOverlayResize(self.overlay.ok_or(NoneError {})?, width, height);
+        }
+
+        Ok(())
+    }
+}
+
+pub trait UltralightAppWindow {
+    fn window_close(&self) -> Result<(), NoneError>;
+
+    fn window_device_to_pixel(&self, val: i32) -> Result<i32, NoneError>;
+    fn window_pixels_to_device(&self, val: i32) -> Result<i32, NoneError>;
+
+    fn window_get_height(&self) -> Result<u32, NoneError>;
+    fn window_get_width(&self) -> Result<u32, NoneError>;
+    fn window_get_scale(&self) -> Result<f64, NoneError>;
+
+    fn window_set_title(&mut self, title: &str) -> Result<(), NoneError>;
+    fn window_set_cursor(&mut self, cursor: Cursor) -> Result<(), NoneError>;
+}
+
+impl<'a> UltralightAppWindow for UltralightApp<'a> {
+    fn window_close(&self) -> Result<(), NoneError> {
+        unsafe { Ok(ul::ulWindowClose(self.window.ok_or(NoneError {})?)) }
+    }
+
+    fn window_device_to_pixel(&self, val: i32) -> Result<i32, NoneError> {
+        unsafe { Ok(ul::ulWindowDeviceToPixel(self.window.ok_or(NoneError {})?, val)) }
+    }
+
+    fn window_pixels_to_device(&self, val: i32) -> Result<i32, NoneError> {
+        unsafe { Ok(ul::ulWindowPixelsToDevice(self.window.ok_or(NoneError {})?, val)) }
+    }
+
+    fn window_get_height(&self) -> Result<u32, NoneError> {
+        unsafe { Ok(ul::ulWindowGetHeight(self.window.ok_or(NoneError {})?)) }
+    }
+
+    fn window_get_width(&self) -> Result<u32, NoneError> {
+        unsafe { Ok(ul::ulWindowGetWidth(self.window.ok_or(NoneError {})?)) }
+    }
+
+    fn window_get_scale(&self) -> Result<f64, NoneError> {
+        unsafe { Ok(ul::ulWindowGetScale(self.window.ok_or(NoneError {})?)) }
+    }
+
+    fn window_set_title(&mut self, title: &str) -> Result<(), NoneError> {
         unsafe {
             ul::ulWindowSetTitle(
                 self.window.ok_or(NoneError {})?,
@@ -201,34 +326,50 @@ impl<'a> UltralightApp<'a> {
         Ok(())
     }
 
-    pub fn resize_overlay(&self, width: u32, height: u32) -> Result<(), NoneError> {
+    fn window_set_cursor(&mut self, cursor: Cursor) -> Result<(), NoneError> {
         unsafe {
-            ul::ulOverlayResize(self.overlay.ok_or(NoneError {})?, width, height);
+            Ok(ul::ulWindowSetCursor(
+                self.window.ok_or(NoneError {})?,
+                cursor as u32
+            ))
         }
+    }
+}
 
-        Ok(())
+pub trait UltralightAppWindowCallbacks<'a> {
+    fn window_set_close_callback<T>(&self, cb: &'a mut T) -> Result<(), NoneError>
+        where T: FnMut();
+
+    fn window_set_resize_callback<T>(&self, cb: &'a mut T) -> Result<(), NoneError>
+        where T: FnMut(u32, u32);
+}
+
+impl<'a> UltralightAppWindowCallbacks<'a> for UltralightApp<'a> {
+    fn window_set_close_callback<T>(&self, cb: &'a mut T) -> Result<(), NoneError>
+        where T: FnMut(),
+    {
+        unsafe {
+            let (cb_closure, cb_function) = unpack_window_close_cb(cb);
+
+            Ok(ul::ulWindowSetCloseCallback(
+                self.window.ok_or(NoneError {})?,
+                Some(cb_function),
+                cb_closure,
+            ))
+        }
     }
 
-    pub fn set_window_resize_callback<T>(&self, cb: &'a mut T) -> Result<(), NoneError>
-    where
-        T: FnMut(u32, u32),
+    fn window_set_resize_callback<T>(&self, cb: &'a mut T) -> Result<(), NoneError>
+        where T: FnMut(u32, u32),
     {
         unsafe {
             let (cb_closure, cb_function) = unpack_window_resize_cb(cb);
 
-            ul::ulWindowSetResizeCallback(
+            Ok(ul::ulWindowSetResizeCallback(
                 self.window.ok_or(NoneError {})?,
                 Some(cb_function),
                 cb_closure,
-            );
-        }
-
-        Ok(())
-    }
-
-    pub fn run(&mut self) {
-        unsafe {
-            ul::ulAppRun(self.app);
+            ))
         }
     }
 }
@@ -260,6 +401,12 @@ impl<'a> Ultralight<'a> {
 
             phantom: PhantomData,
         }
+    }
+
+    pub fn app(&mut self, app: &mut UltralightApp) -> Result<(), NoneError> {
+        self.view = Some(app.overlay_get_view()?);
+
+        Ok(())
     }
 
     pub fn set_view(&mut self, view: View) {

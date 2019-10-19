@@ -19,6 +19,21 @@ pub unsafe fn ul_string(stref: &str) -> ul::ULString {
     )
 }
 
+pub unsafe fn unpack_window_close_cb<F>(closure: &mut F) -> (*mut c_void, unsafe extern "C" fn(*mut c_void))
+    where
+        F: FnMut(),
+{
+    extern "C" fn trampoline<F>(data: *mut c_void)
+        where
+            F: FnMut(),
+    {
+        let closure: &mut F = unsafe { &mut *(data as *mut F) };
+        (*closure)();
+    }
+
+    (closure as *mut F as *mut c_void, trampoline::<F>)
+}
+
 pub unsafe fn unpack_window_resize_cb<F>(closure: &mut F) -> (*mut c_void, unsafe extern "C" fn(*mut c_void, width: u32, height: u32))
     where
         F: FnMut(u32, u32),
