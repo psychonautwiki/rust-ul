@@ -24,6 +24,8 @@ use std::os::raw::c_void;
 mod helpers_internal;
 use crate::helpers_internal::unpack_window_resize_cb;
 use helpers_internal::{log_forward_cb, unpack_closure_view_cb};
+use std::ops::DerefMut;
+use std::marker::PhantomData;
 
 pub type App = ul::ULApp;
 pub type Config = config::UltralightConfig;
@@ -92,7 +94,7 @@ pub struct NoneError {}
     let renderer = ul::ulAppGetRenderer(app); -> renderer
 */
 
-pub struct UltralightApp {
+pub struct UltralightApp<'a> {
     config: Config,
     settings: Settings,
     app: App,
@@ -103,10 +105,12 @@ pub struct UltralightApp {
     monitor: Monitor,
     overlay: Option<Overlay>,
     window: Option<Window>,
+
+    phantom: PhantomData<&'a ()>,
 }
 
-impl UltralightApp {
-    pub fn new(settings: Option<Settings>, config: Option<Config>) -> UltralightApp {
+impl<'a> UltralightApp<'a> {
+    pub fn new(settings: Option<Settings>, config: Option<Config>) -> UltralightApp<'a> {
         let ulconfig = match config {
             Some(config) => config,
             None => Config::new(),
@@ -132,6 +136,7 @@ impl UltralightApp {
                 monitor,
                 window: None,
                 overlay: None,
+                phantom: PhantomData,
             }
         }
     }
@@ -204,12 +209,12 @@ impl UltralightApp {
         Ok(())
     }
 
-    pub fn set_window_resize_callback<T>(&self, mut cb: T) -> Result<(), NoneError>
+    pub fn set_window_resize_callback<T>(&self, cb: &'a mut T) -> Result<(), NoneError>
     where
         T: FnMut(u32, u32),
     {
         unsafe {
-            let (cb_closure, cb_function) = unpack_window_resize_cb(&mut cb);
+            let (cb_closure, cb_function) = unpack_window_resize_cb(cb);
 
             ul::ulWindowSetResizeCallback(
                 self.window.ok_or(NoneError {})?,
@@ -228,14 +233,16 @@ impl UltralightApp {
     }
 }
 
-pub struct Ultralight {
+pub struct Ultralight<'a> {
     config: Config,
     renderer: Renderer,
     view: Option<View>,
+
+    phantom: PhantomData<&'a ()>,
 }
 
-impl Ultralight {
-    pub fn new(config: Option<Config>, renderer: Option<Renderer>) -> Ultralight {
+impl<'a> Ultralight<'a> {
+    pub fn new(config: Option<Config>, renderer: Option<Renderer>) -> Ultralight<'a> {
         let ulconfig = match config {
             Some(config) => config,
             None => Config::new(),
@@ -250,6 +257,8 @@ impl Ultralight {
             config: ulconfig,
             renderer: used_renderer,
             view: None,
+
+            phantom: PhantomData,
         }
     }
 
@@ -333,14 +342,14 @@ impl Ultralight {
         }
     }
 
-    pub fn set_finish_loading_callback<T>(&mut self, mut cb: T) -> Result<(), NoneError>
+    pub fn set_finish_loading_callback<T>(&mut self, cb: &'a mut T) -> Result<(), NoneError>
     where
         T: FnMut(View),
     {
         let view = self.view.ok_or(NoneError {})?;
 
         unsafe {
-            let (cb_closure, cb_function) = unpack_closure_view_cb(&mut cb);
+            let (cb_closure, cb_function) = unpack_closure_view_cb(cb);
 
             ul::ulViewSetFinishLoadingCallback(view, Some(cb_function), cb_closure);
         }
@@ -348,14 +357,14 @@ impl Ultralight {
         Ok(())
     }
 
-    pub fn set_dom_ready_callback<T>(&mut self, mut cb: T) -> Result<(), NoneError>
+    pub fn set_dom_ready_callback<T>(&mut self, cb: &'a mut T) -> Result<(), NoneError>
     where
         T: FnMut(View),
     {
         let view = self.view.ok_or(NoneError {})?;
 
         unsafe {
-            let (cb_closure, cb_function) = unpack_closure_view_cb(&mut cb);
+            let (cb_closure, cb_function) = unpack_closure_view_cb(cb);
 
             ul::ulViewSetDOMReadyCallback(view, Some(cb_function), cb_closure);
         }
@@ -366,7 +375,7 @@ impl Ultralight {
     pub fn create_function<T>(
         &mut self,
         name: &'static str,
-        hook: &mut T,
+        hook: &'a mut T,
     ) -> Result<ul::JSObjectRef, NoneError>
     where
         T: FnMut(
