@@ -1,19 +1,18 @@
-use crate::ul;
 use crate::helpers_internal::unpack_closure_hook_cb;
 
 pub fn create_js_function<T> (
     view: crate::View,
     name: &'static str,
     mut hook: &mut T
-) -> ul::JSObjectRef
+) -> ul_sys::JSObjectRef
     where T: FnMut(
-        ul::JSContextRef,
-        ul::JSObjectRef,
-        ul::JSObjectRef,
+        ul_sys::JSContextRef,
+        ul_sys::JSObjectRef,
+        ul_sys::JSObjectRef,
         usize,
-        *const ul::JSValueRef,
-        *mut ul::JSValueRef,
-    ) -> ul::JSValueRef
+        *const ul_sys::JSValueRef,
+        *mut ul_sys::JSValueRef,
+    ) -> ul_sys::JSValueRef
 {
     unsafe {
         let (
@@ -23,13 +22,13 @@ pub fn create_js_function<T> (
 
         let classname_str = std::ffi::CString::new(name).unwrap();
 
-        let jsclassdef = ul::JSClassDefinition {
+        let jsclassdef = ul_sys::JSClassDefinition {
             version: 0,
             attributes: 0,
             className: classname_str.as_ptr(),
-            parentClass: std::ptr::null_mut() as ul::JSClassRef,
-            staticValues: std::ptr::null() as *const ul::JSStaticValue,
-            staticFunctions: std::ptr::null() as *const ul::JSStaticFunction,
+            parentClass: std::ptr::null_mut() as ul_sys::JSClassRef,
+            staticValues: std::ptr::null() as *const ul_sys::JSStaticValue,
+            staticFunctions: std::ptr::null() as *const ul_sys::JSStaticFunction,
             initialize: None,
             hasProperty: None,
             getProperty: None,
@@ -45,13 +44,13 @@ pub fn create_js_function<T> (
             //finalize: Some(|| std::mem::drop(jsclass)),
         };
 
-        let jsclass = ul::JSClassCreate(
+        let jsclass = ul_sys::JSClassCreate(
             &jsclassdef
         );
 
         let (jsgctx, ..) = getJSContextFromView(view);
 
-        ul::JSObjectMake(
+        ul_sys::JSObjectMake(
             jsgctx,
             jsclass,
             hook_closure
@@ -61,10 +60,10 @@ pub fn create_js_function<T> (
 
 pub fn getJSContextFromView(
     view: crate::View
-) -> (ul::JSContextRef, ul::JSObjectRef) {
+) -> (ul_sys::JSContextRef, ul_sys::JSObjectRef) {
     unsafe {
-        let jsgctx = ul::ulViewGetJSContext(view);
-        let jsgctx_object = ul::JSContextGetGlobalObject(jsgctx);
+        let jsgctx = ul_sys::ulViewGetJSContext(view);
+        let jsgctx_object = ul_sys::JSContextGetGlobalObject(jsgctx);
 
         (jsgctx, jsgctx_object)
     }
@@ -73,7 +72,7 @@ pub fn getJSContextFromView(
 pub fn set_js_object_property(
     view: crate::View,
     name: &'static str,
-    object: ul::JSObjectRef
+    object: ul_sys::JSObjectRef
 ) {
     unsafe {
         let (jsgctx, jsgctx_object) = getJSContextFromView(view);
@@ -82,17 +81,17 @@ pub fn set_js_object_property(
             name
         ).unwrap();
 
-        let propertyName = ul::JSStringCreateWithUTF8CString(
+        let propertyName = ul_sys::JSStringCreateWithUTF8CString(
             c_name.as_ptr()
         );
 
-        ul::JSObjectSetProperty(
+        ul_sys::JSObjectSetProperty(
             jsgctx,
             jsgctx_object,
             propertyName,
             object,
             0,
-            std::ptr::null_mut() as *mut *const ul::OpaqueJSValue
+            std::ptr::null_mut() as *mut *const ul_sys::OpaqueJSValue
         );
     }
 }
@@ -102,7 +101,7 @@ pub fn set_js_object_property(
 pub fn evaluate_script(
     view: crate::View,
     script: &'static str
-) -> ul::JSValueRef {
+) -> ul_sys::JSValueRef {
     unsafe {
         let (jsgctx, jsgctx_object) = getJSContextFromView(view);
 
@@ -110,15 +109,15 @@ pub fn evaluate_script(
             script
         ).unwrap();
 
-        ul::JSEvaluateScript(
+        ul_sys::JSEvaluateScript(
             jsgctx,
-            ul::JSStringCreateWithUTF8CString(
+            ul_sys::JSStringCreateWithUTF8CString(
                 script_c_str.as_ptr()
             ),
             jsgctx_object,
-            std::ptr::null_mut() as *mut ul::OpaqueJSString,
-            ul::kJSPropertyAttributeNone as i32,
-            std::ptr::null_mut() as *mut *const ul::OpaqueJSValue
+            std::ptr::null_mut() as *mut ul_sys::OpaqueJSString,
+            ul_sys::kJSPropertyAttributeNone as i32,
+            std::ptr::null_mut() as *mut *const ul_sys::OpaqueJSValue
         )
     }
 }

@@ -1,14 +1,15 @@
 #![allow(dead_code, unused_must_use)]
 
-use ::ul::*;
+use ::ul as ul;
+use ul::*;
 
 fn main() {
-    let mut config = ::ul::Config::new();
-    let settings = ::ul::Settings::new();
+    let mut config = ul::Config::new();
+    let settings = ul::Settings::new();
 
     config.deviceScaleHint(2.0);
 
-    let mut ul_app = ::ul::UltralightApp::new(
+    let mut ul_app = ul::UltralightApp::new(
         Some(settings),
         Some(config),
     );
@@ -23,7 +24,7 @@ fn main() {
         false,
     );
 
-    let mut ul = ::ul::Ultralight::new(
+    let mut ul = ul::Ultralight::new(
         None,
         Some(ul_app.get_renderer()),
     );

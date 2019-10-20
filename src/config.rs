@@ -1,5 +1,3 @@
-use crate::ul;
-
 #[derive(Default)]
 pub struct UltralightConfig {
     enableImages: Option<bool>,
@@ -44,9 +42,9 @@ impl UltralightConfig {
         }
     }
 
-    pub fn to_ulconfig(&self) -> ul::ULConfig {
+    pub fn to_ulconfig(&self) -> ul_sys::ULConfig {
         let config = unsafe {
-            ul::ulCreateConfig()
+            ul_sys::ulCreateConfig()
         };
 
         set_config!(config, self, enableImages, ulConfigSetEnableImages);

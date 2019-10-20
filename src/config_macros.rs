@@ -13,7 +13,7 @@ macro_rules! set_config (
     ($config: expr, $self: expr, $name:ident, $ffiName:ident) => (
         if $self.$name.is_some() {
             unsafe {
-                ul::$ffiName($config, $self.$name.unwrap());
+                ul_sys::$ffiName($config, $self.$name.unwrap());
             }
         }
     )
@@ -24,13 +24,13 @@ macro_rules! set_config_str (
     ($config: expr, $self: expr, $name:ident, $ffiName:ident) => (
         if $self.$name.is_some() {
             unsafe {
-                let str = ul::ulCreateString(
+                let str = ul_sys::ulCreateString(
                     std::ffi::CString::new(
                         $self.$name.clone().unwrap()
                     ).unwrap().as_ptr()
                 );
 
-                ul::$ffiName($config, str);
+                ul_sys::$ffiName($config, str);
             }
         }
     )

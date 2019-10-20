@@ -1,7 +1,4 @@
-use crate::{
-    ul,
-    View
-};
+use crate::View;
 
 use std::{
     os::raw::{
@@ -9,12 +6,12 @@ use std::{
     },
 };
 
-pub unsafe fn ul_string(stref: &str) -> ul::ULString {
+pub unsafe fn ul_string(stref: &str) -> ul_sys::ULString {
     let cstr = std::ffi::CString::new(
         stref
     ).unwrap();
 
-    ul::ulCreateString(
+    ul_sys::ulCreateString(
         cstr.as_ptr()
     )
 }
@@ -68,44 +65,44 @@ pub unsafe fn unpack_closure_view_cb<F>(closure: &mut F) -> (*mut c_void, unsafe
 
 // JSContextHooks
 type ClosureHookCallbackSig = unsafe extern "C" fn(
-    ul::JSContextRef,
-    ul::JSObjectRef,
-    ul::JSObjectRef,
+    ul_sys::JSContextRef,
+    ul_sys::JSObjectRef,
+    ul_sys::JSObjectRef,
     usize,
-    *const ul::JSValueRef,
-    *mut ul::JSValueRef
-) -> ul::JSValueRef;
+    *const ul_sys::JSValueRef,
+    *mut ul_sys::JSValueRef
+) -> ul_sys::JSValueRef;
 
 pub unsafe fn unpack_closure_hook_cb<F>(closure: &mut F) -> (*mut c_void, ClosureHookCallbackSig)
     where
         F: FnMut(
-            ul::JSContextRef,
-            ul::JSObjectRef,
-            ul::JSObjectRef,
+            ul_sys::JSContextRef,
+            ul_sys::JSObjectRef,
+            ul_sys::JSObjectRef,
             usize,
-            *const ul::JSValueRef,
-            *mut ul::JSValueRef,
-        ) -> ul::JSValueRef,
+            *const ul_sys::JSValueRef,
+            *mut ul_sys::JSValueRef,
+        ) -> ul_sys::JSValueRef,
 {
     unsafe extern "C" fn trampoline<F>(
-        ctx: ul::JSContextRef,
-        function: ul::JSObjectRef,
-        thisObject: ul::JSObjectRef,
+        ctx: ul_sys::JSContextRef,
+        function: ul_sys::JSObjectRef,
+        thisObject: ul_sys::JSObjectRef,
         argumentCount: usize,
-        arguments: *const ul::JSValueRef,
-        exception: *mut ul::JSValueRef,
-    ) -> ul::JSValueRef
+        arguments: *const ul_sys::JSValueRef,
+        exception: *mut ul_sys::JSValueRef,
+    ) -> ul_sys::JSValueRef
         where
             F: FnMut(
-                ul::JSContextRef,
-                ul::JSObjectRef,
-                ul::JSObjectRef,
+                ul_sys::JSContextRef,
+                ul_sys::JSObjectRef,
+                ul_sys::JSObjectRef,
                 usize,
-                *const ul::JSValueRef,
-                *mut ul::JSValueRef,
-            ) -> ul::JSValueRef,
+                *const ul_sys::JSValueRef,
+                *mut ul_sys::JSValueRef,
+            ) -> ul_sys::JSValueRef,
     {
-        let closure: &mut F = &mut *(ul::JSObjectGetPrivate(function) as *mut F);
+        let closure: &mut F = &mut *(ul_sys::JSObjectGetPrivate(function) as *mut F);
 
         (*closure)(
             ctx,
@@ -125,48 +122,48 @@ static msg_parsing_failed: &'static str = "!parsing failed!";
 pub unsafe extern "C" fn log_forward_cb(
     user_data: *mut ::std::os::raw::c_void,
     caller: View,
-    source: ul::ULMessageSource,           /* u32 */
-    level: ul::ULMessageLevel,             /* u32 */
-    message: ul::ULString,                 /* *mut C_String aka *mut u8 */
+    source: ul_sys::ULMessageSource,           /* u32 */
+    level: ul_sys::ULMessageLevel,             /* u32 */
+    message: ul_sys::ULString,                 /* *mut C_String aka *mut u8 */
     line_number: ::std::os::raw::c_uint,    /* u32 */
     column_number: ::std::os::raw::c_uint,  /* u32 */
-    source_id: ul::ULString,               /* *mut C_String aka *mut u8 */
+    source_id: ul_sys::ULString,               /* *mut C_String aka *mut u8 */
 ) {
     let level = match level {
-        ul::ULMessageLevel_kMessageLevel_Log => "log",
-        ul::ULMessageLevel_kMessageLevel_Warning => "warning",
-        ul::ULMessageLevel_kMessageLevel_Error => "error",
-        ul::ULMessageLevel_kMessageLevel_Debug => "debug",
-        ul::ULMessageLevel_kMessageLevel_Info => "info",
+        ul_sys::ULMessageLevel_kMessageLevel_Log => "log",
+        ul_sys::ULMessageLevel_kMessageLevel_Warning => "warning",
+        ul_sys::ULMessageLevel_kMessageLevel_Error => "error",
+        ul_sys::ULMessageLevel_kMessageLevel_Debug => "debug",
+        ul_sys::ULMessageLevel_kMessageLevel_Info => "info",
         _ => "unknown",
     };
 
     let source = match source {
-        ul::ULMessageSource_kMessageSource_XML => "xml",
-        ul::ULMessageSource_kMessageSource_JS => "js",
-        ul::ULMessageSource_kMessageSource_Network => "network",
-        ul::ULMessageSource_kMessageSource_ConsoleAPI => "consoleapi",
-        ul::ULMessageSource_kMessageSource_Storage => "storage",
-        ul::ULMessageSource_kMessageSource_AppCache => "appcache",
-        ul::ULMessageSource_kMessageSource_Rendering => "rendering",
-        ul::ULMessageSource_kMessageSource_CSS => "css",
-        ul::ULMessageSource_kMessageSource_Security => "security",
-        ul::ULMessageSource_kMessageSource_ContentBlocker => "contentblocker",
-        ul::ULMessageSource_kMessageSource_Other => "other",
+        ul_sys::ULMessageSource_kMessageSource_XML => "xml",
+        ul_sys::ULMessageSource_kMessageSource_JS => "js",
+        ul_sys::ULMessageSource_kMessageSource_Network => "network",
+        ul_sys::ULMessageSource_kMessageSource_ConsoleAPI => "consoleapi",
+        ul_sys::ULMessageSource_kMessageSource_Storage => "storage",
+        ul_sys::ULMessageSource_kMessageSource_AppCache => "appcache",
+        ul_sys::ULMessageSource_kMessageSource_Rendering => "rendering",
+        ul_sys::ULMessageSource_kMessageSource_CSS => "css",
+        ul_sys::ULMessageSource_kMessageSource_Security => "security",
+        ul_sys::ULMessageSource_kMessageSource_ContentBlocker => "contentblocker",
+        ul_sys::ULMessageSource_kMessageSource_Other => "other",
         _ => "unknown",
     };
 
     let message = match String::from_utf16(std::slice::from_raw_parts_mut(
-        ul::ulStringGetData(message),
-        ul::ulStringGetLength(message),
+        ul_sys::ulStringGetData(message),
+        ul_sys::ulStringGetLength(message),
     )) {
         Ok(msg) => msg,
         Err(_) => msg_parsing_failed.to_string(),
     };
 
     let source_id = match String::from_utf16(std::slice::from_raw_parts_mut(
-        ul::ulStringGetData(source_id),
-        ul::ulStringGetLength(source_id),
+        ul_sys::ulStringGetData(source_id),
+        ul_sys::ulStringGetLength(source_id),
     )) {
         Ok(src) => src,
         Err(_) => msg_parsing_failed.to_string(),

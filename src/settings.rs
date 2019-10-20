@@ -1,5 +1,3 @@
-use crate::ul;
-
 #[derive(Default)]
 pub struct UltralightSettings {
     loadShadersFromFileSystem: Option<bool>,
@@ -16,9 +14,9 @@ impl UltralightSettings {
         }
     }
 
-    pub fn to_ulsettings(&self) -> ul::ULSettings {
+    pub fn to_ulsettings(&self) -> ul_sys::ULSettings {
         let settings = unsafe {
-            ul::ulCreateSettings()
+            ul_sys::ulCreateSettings()
         };
 
         set_config!(settings, self, loadShadersFromFileSystem, ulSettingsSetLoadShadersFromFileSystem);

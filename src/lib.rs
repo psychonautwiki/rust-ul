@@ -7,7 +7,7 @@
     unused_must_use
 )]
 
-pub extern crate ul_sys as ul;
+pub extern crate ul_sys;
 
 #[macro_use]
 mod config_macros;
@@ -19,25 +19,29 @@ pub mod helpers;
 
 use helpers::{create_js_function, evaluate_script, set_js_object_property};
 
-use std::os::raw::c_void;
-
 mod helpers_internal;
-use crate::helpers_internal::{unpack_window_resize_cb, unpack_window_close_cb};
-use helpers_internal::{log_forward_cb, unpack_closure_view_cb};
+use helpers_internal::{
+    unpack_window_resize_cb,
+    unpack_window_close_cb,
+    log_forward_cb,
+    unpack_closure_view_cb,
+};
 
 mod cursor;
 
-use std::ops::DerefMut;
-use std::marker::PhantomData;
+pub mod jsc;
 
-pub type App = ul::ULApp;
+use std::marker::PhantomData;
+use std::os::raw::c_void;
+
+pub type App = ul_sys::ULApp;
 pub type Config = config::UltralightConfig;
 pub type Settings = settings::UltralightSettings;
-pub type Monitor = ul::ULMonitor;
-pub type Overlay = ul::ULOverlay;
-pub type Renderer = ul::ULRenderer;
-pub type View = ul::ULView;
-pub type Window = ul::ULWindow;
+pub type Monitor = ul_sys::ULMonitor;
+pub type Overlay = ul_sys::ULOverlay;
+pub type Renderer = ul_sys::ULRenderer;
+pub type View = ul_sys::ULView;
+pub type Window = ul_sys::ULWindow;
 
 pub type Cursor = cursor::Cursor;
 
@@ -83,20 +87,20 @@ pub struct NoneError {}
 
 /*
 
-    let config = ul::ulCreateConfig(); -> config
+    let config = ul_sys::ulCreateConfig(); -> config
 
-    let app = ul::ulCreateApp(config); -> app
-    let monitor = ul::ulAppGetMainMonitor(app); -> monitor
+    let app = ul_sys::ulCreateApp(config); -> app
+    let monitor = ul_sys::ulAppGetMainMonitor(app); -> monitor
 
     let (width, height): (u32, u32) = (1280, 768);
 
-    let window = ul::ulCreateWindow(
+    let window = ul_sys::ulCreateWindow(
         monitor, width, height, false, 0b0110
     ); -> window
 
-    ul::ulAppSetWindow(app, window); -> void
+    ul_sys::ulAppSetWindow(app, window); -> void
 
-    let renderer = ul::ulAppGetRenderer(app); -> renderer
+    let renderer = ul_sys::ulAppGetRenderer(app); -> renderer
 */
 
 pub struct UltralightApp<'a> {
@@ -127,12 +131,12 @@ impl<'a> UltralightApp<'a> {
         };
 
         unsafe {
-            let app = ul::ulCreateApp(
+            let app = ul_sys::ulCreateApp(
                 ulsettings.to_ulsettings(),
                 ulconfig.to_ulconfig(),
             );
 
-            let monitor = ul::ulAppGetMainMonitor(app);
+            let monitor = ul_sys::ulAppGetMainMonitor(app);
 
             UltralightApp {
                 config: ulconfig,
@@ -175,25 +179,25 @@ impl<'a> UltralightApp<'a> {
         }
 
         let window =
-            unsafe { ul::ulCreateWindow(self.monitor, height, width, fullscreen, window_flags) };
+            unsafe { ul_sys::ulCreateWindow(self.monitor, height, width, fullscreen, window_flags) };
 
         unsafe {
-            ul::ulAppSetWindow(self.app, window);
+            ul_sys::ulAppSetWindow(self.app, window);
         }
 
-        let overlay = unsafe { ul::ulCreateOverlay(window, width, height, 0, 0) };
+        let overlay = unsafe { ul_sys::ulCreateOverlay(window, width, height, 0, 0) };
 
         self.window = Some(window);
         self.overlay = Some(overlay);
     }
 
     pub fn get_renderer(&mut self) -> Renderer {
-        unsafe { ul::ulAppGetRenderer(self.app) }
+        unsafe { ul_sys::ulAppGetRenderer(self.app) }
     }
 
     pub fn run(&mut self) {
         unsafe {
-            ul::ulAppRun(self.app);
+            ul_sys::ulAppRun(self.app);
         }
     }
 }
@@ -220,48 +224,48 @@ pub trait UltralightAppOverlay {
 
 impl<'a> UltralightAppOverlay for UltralightApp<'a> {
     fn overlay_get_view(&mut self) -> Result<View, NoneError> {
-        unsafe { Ok(ul::ulOverlayGetView(self.overlay.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulOverlayGetView(self.overlay.ok_or(NoneError {})?)) }
     }
 
     fn overlay_get_height(&mut self) -> Result<u32, NoneError> {
-        unsafe { Ok(ul::ulOverlayGetHeight(self.overlay.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulOverlayGetHeight(self.overlay.ok_or(NoneError {})?)) }
     }
 
     fn overlay_get_width(&mut self) -> Result<u32, NoneError> {
-        unsafe { Ok(ul::ulOverlayGetWidth(self.overlay.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulOverlayGetWidth(self.overlay.ok_or(NoneError {})?)) }
     }
 
     fn overlay_get_x(&mut self) -> Result<i32, NoneError> {
-        unsafe { Ok(ul::ulOverlayGetX(self.overlay.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulOverlayGetX(self.overlay.ok_or(NoneError {})?)) }
     }
 
     fn overlay_get_y(&mut self) -> Result<i32, NoneError> {
-        unsafe { Ok(ul::ulOverlayGetY(self.overlay.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulOverlayGetY(self.overlay.ok_or(NoneError {})?)) }
     }
 
     fn overlay_focus(&mut self) -> Result<(), NoneError> {
-        unsafe { Ok(ul::ulOverlayFocus(self.overlay.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulOverlayFocus(self.overlay.ok_or(NoneError {})?)) }
     }
 
     fn overlay_unfocus(&mut self) -> Result<(), NoneError> {
-        unsafe { Ok(ul::ulOverlayUnfocus(self.overlay.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulOverlayUnfocus(self.overlay.ok_or(NoneError {})?)) }
     }
 
     fn overlay_has_focus(&mut self) -> Result<bool, NoneError> {
-        unsafe { Ok(ul::ulOverlayHasFocus(self.overlay.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulOverlayHasFocus(self.overlay.ok_or(NoneError {})?)) }
     }
 
     fn overlay_hide(&mut self) -> Result<(), NoneError> {
-        unsafe { Ok(ul::ulOverlayHide(self.overlay.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulOverlayHide(self.overlay.ok_or(NoneError {})?)) }
     }
 
     fn overlay_is_hidden(&mut self) -> Result<bool, NoneError> {
-        unsafe { Ok(ul::ulOverlayIsHidden(self.overlay.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulOverlayIsHidden(self.overlay.ok_or(NoneError {})?)) }
     }
 
     fn overlay_move_to(&self, x: i32, y: i32) -> Result<(), NoneError> {
         unsafe {
-            ul::ulOverlayMoveTo(self.overlay.ok_or(NoneError {})?, x, y);
+            ul_sys::ulOverlayMoveTo(self.overlay.ok_or(NoneError {})?, x, y);
         }
 
         Ok(())
@@ -269,7 +273,7 @@ impl<'a> UltralightAppOverlay for UltralightApp<'a> {
 
     fn overlay_resize(&self, width: u32, height: u32) -> Result<(), NoneError> {
         unsafe {
-            ul::ulOverlayResize(self.overlay.ok_or(NoneError {})?, width, height);
+            ul_sys::ulOverlayResize(self.overlay.ok_or(NoneError {})?, width, height);
         }
 
         Ok(())
@@ -292,32 +296,32 @@ pub trait UltralightAppWindow {
 
 impl<'a> UltralightAppWindow for UltralightApp<'a> {
     fn window_close(&self) -> Result<(), NoneError> {
-        unsafe { Ok(ul::ulWindowClose(self.window.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulWindowClose(self.window.ok_or(NoneError {})?)) }
     }
 
     fn window_device_to_pixel(&self, val: i32) -> Result<i32, NoneError> {
-        unsafe { Ok(ul::ulWindowDeviceToPixel(self.window.ok_or(NoneError {})?, val)) }
+        unsafe { Ok(ul_sys::ulWindowDeviceToPixel(self.window.ok_or(NoneError {})?, val)) }
     }
 
     fn window_pixels_to_device(&self, val: i32) -> Result<i32, NoneError> {
-        unsafe { Ok(ul::ulWindowPixelsToDevice(self.window.ok_or(NoneError {})?, val)) }
+        unsafe { Ok(ul_sys::ulWindowPixelsToDevice(self.window.ok_or(NoneError {})?, val)) }
     }
 
     fn window_get_height(&self) -> Result<u32, NoneError> {
-        unsafe { Ok(ul::ulWindowGetHeight(self.window.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulWindowGetHeight(self.window.ok_or(NoneError {})?)) }
     }
 
     fn window_get_width(&self) -> Result<u32, NoneError> {
-        unsafe { Ok(ul::ulWindowGetWidth(self.window.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulWindowGetWidth(self.window.ok_or(NoneError {})?)) }
     }
 
     fn window_get_scale(&self) -> Result<f64, NoneError> {
-        unsafe { Ok(ul::ulWindowGetScale(self.window.ok_or(NoneError {})?)) }
+        unsafe { Ok(ul_sys::ulWindowGetScale(self.window.ok_or(NoneError {})?)) }
     }
 
     fn window_set_title(&mut self, title: &str) -> Result<(), NoneError> {
         unsafe {
-            ul::ulWindowSetTitle(
+            ul_sys::ulWindowSetTitle(
                 self.window.ok_or(NoneError {})?,
                 std::ffi::CString::new(title).unwrap().as_ptr(),
             );
@@ -328,7 +332,7 @@ impl<'a> UltralightAppWindow for UltralightApp<'a> {
 
     fn window_set_cursor(&mut self, cursor: Cursor) -> Result<(), NoneError> {
         unsafe {
-            Ok(ul::ulWindowSetCursor(
+            Ok(ul_sys::ulWindowSetCursor(
                 self.window.ok_or(NoneError {})?,
                 cursor as u32
             ))
@@ -351,7 +355,7 @@ impl<'a> UltralightAppWindowCallbacks<'a> for UltralightApp<'a> {
         unsafe {
             let (cb_closure, cb_function) = unpack_window_close_cb(cb);
 
-            Ok(ul::ulWindowSetCloseCallback(
+            Ok(ul_sys::ulWindowSetCloseCallback(
                 self.window.ok_or(NoneError {})?,
                 Some(cb_function),
                 cb_closure,
@@ -365,7 +369,7 @@ impl<'a> UltralightAppWindowCallbacks<'a> for UltralightApp<'a> {
         unsafe {
             let (cb_closure, cb_function) = unpack_window_resize_cb(cb);
 
-            Ok(ul::ulWindowSetResizeCallback(
+            Ok(ul_sys::ulWindowSetResizeCallback(
                 self.window.ok_or(NoneError {})?,
                 Some(cb_function),
                 cb_closure,
@@ -391,7 +395,7 @@ impl<'a> Ultralight<'a> {
 
         let used_renderer = match renderer {
             Some(renderer) => renderer,
-            None => unsafe { ul::ulCreateRenderer(ulconfig.to_ulconfig()) },
+            None => unsafe { ul_sys::ulCreateRenderer(ulconfig.to_ulconfig()) },
         };
 
         Ultralight {
@@ -415,7 +419,7 @@ impl<'a> Ultralight<'a> {
 
     pub fn view(&mut self, width: u32, height: u32, transparent: bool) {
         unsafe {
-            self.view = Some(ul::ulCreateView(self.renderer, width, height, transparent));
+            self.view = Some(ul_sys::ulCreateView(self.renderer, width, height, transparent));
         }
     }
 
@@ -423,7 +427,7 @@ impl<'a> Ultralight<'a> {
         unsafe {
             let url_ulstr = helpers_internal::ul_string(url);
 
-            ul::ulViewLoadURL(self.view.ok_or(NoneError {})?, url_ulstr);
+            ul_sys::ulViewLoadURL(self.view.ok_or(NoneError {})?, url_ulstr);
         }
 
         Ok(())
@@ -433,7 +437,7 @@ impl<'a> Ultralight<'a> {
         unsafe {
             let code_ulstr = helpers_internal::ul_string(code);
 
-            ul::ulViewLoadHTML(self.view.ok_or(NoneError {})?, code_ulstr);
+            ul_sys::ulViewLoadHTML(self.view.ok_or(NoneError {})?, code_ulstr);
         }
 
         Ok(())
@@ -441,14 +445,14 @@ impl<'a> Ultralight<'a> {
 
     pub fn update(&mut self) {
         unsafe {
-            ul::ulUpdate(self.renderer);
+            ul_sys::ulUpdate(self.renderer);
         }
     }
 
     pub fn update_until_loaded(&mut self) -> Result<(), NoneError> {
         unsafe {
-            while ul::ulViewIsLoading(self.view.ok_or(NoneError {})?) {
-                ul::ulUpdate(self.renderer);
+            while ul_sys::ulViewIsLoading(self.view.ok_or(NoneError {})?) {
+                ul_sys::ulUpdate(self.renderer);
             }
         }
 
@@ -457,21 +461,21 @@ impl<'a> Ultralight<'a> {
 
     pub fn render(&mut self) {
         unsafe {
-            ul::ulRender(self.renderer);
+            ul_sys::ulRender(self.renderer);
         }
     }
 
     pub fn scroll(&mut self, delta_x: i32, delta_y: i32) -> Result<(), NoneError> {
         unsafe {
-            let scrollEvent = ul::ulCreateScrollEvent(
-                ul::ULScrollEventType_kScrollEventType_ScrollByPixel,
+            let scrollEvent = ul_sys::ulCreateScrollEvent(
+                ul_sys::ULScrollEventType_kScrollEventType_ScrollByPixel,
                 delta_x,
                 delta_y,
             );
 
-            ul::ulViewFireScrollEvent(self.view.ok_or(NoneError {})?, scrollEvent);
+            ul_sys::ulViewFireScrollEvent(self.view.ok_or(NoneError {})?, scrollEvent);
 
-            ul::ulDestroyScrollEvent(scrollEvent);
+            ul_sys::ulDestroyScrollEvent(scrollEvent);
 
             Ok(())
         }
@@ -481,7 +485,7 @@ impl<'a> Ultralight<'a> {
         unsafe {
             let (jsgctx, _) = helpers::getJSContextFromView(self.view.ok_or(NoneError {})?);
 
-            Ok(ul::JSValueToNumber(
+            Ok(ul_sys::JSValueToNumber(
                 jsgctx,
                 self.evaluate_script("document.body.scrollHeight").unwrap(),
                 std::ptr::null_mut(),
@@ -490,30 +494,30 @@ impl<'a> Ultralight<'a> {
     }
 
     pub fn set_finish_loading_callback<T>(&mut self, cb: &'a mut T) -> Result<(), NoneError>
-    where
-        T: FnMut(View),
+        where
+            T: FnMut(View),
     {
         let view = self.view.ok_or(NoneError {})?;
 
         unsafe {
             let (cb_closure, cb_function) = unpack_closure_view_cb(cb);
 
-            ul::ulViewSetFinishLoadingCallback(view, Some(cb_function), cb_closure);
+            ul_sys::ulViewSetFinishLoadingCallback(view, Some(cb_function), cb_closure);
         }
 
         Ok(())
     }
 
     pub fn set_dom_ready_callback<T>(&mut self, cb: &'a mut T) -> Result<(), NoneError>
-    where
-        T: FnMut(View),
+        where
+            T: FnMut(View),
     {
         let view = self.view.ok_or(NoneError {})?;
 
         unsafe {
             let (cb_closure, cb_function) = unpack_closure_view_cb(cb);
 
-            ul::ulViewSetDOMReadyCallback(view, Some(cb_function), cb_closure);
+            ul_sys::ulViewSetDOMReadyCallback(view, Some(cb_function), cb_closure);
         }
 
         Ok(())
@@ -523,16 +527,16 @@ impl<'a> Ultralight<'a> {
         &mut self,
         name: &'static str,
         hook: &'a mut T,
-    ) -> Result<ul::JSObjectRef, NoneError>
-    where
-        T: FnMut(
-            ul::JSContextRef,
-            ul::JSObjectRef,
-            ul::JSObjectRef,
-            usize,
-            *const ul::JSValueRef,
-            *mut ul::JSValueRef,
-        ) -> ul::JSValueRef,
+    ) -> Result<ul_sys::JSObjectRef, NoneError>
+        where
+            T: FnMut(
+                ul_sys::JSContextRef,
+                ul_sys::JSObjectRef,
+                ul_sys::JSObjectRef,
+                usize,
+                *const ul_sys::JSValueRef,
+                *mut ul_sys::JSValueRef,
+            ) -> ul_sys::JSValueRef,
     {
         Ok(create_js_function(
             self.view.ok_or(NoneError {})?,
@@ -544,27 +548,27 @@ impl<'a> Ultralight<'a> {
     pub fn set_js_object_property(
         &mut self,
         name: &'static str,
-        object: ul::JSObjectRef,
+        object: ul_sys::JSObjectRef,
     ) -> Result<(), NoneError> {
         set_js_object_property(self.view.ok_or(NoneError {})?, name, object);
 
         Ok(())
     }
 
-    pub fn evaluate_script(&mut self, script: &'static str) -> Result<ul::JSValueRef, NoneError> {
+    pub fn evaluate_script(&mut self, script: &'static str) -> Result<ul_sys::JSValueRef, NoneError> {
         Ok(evaluate_script(self.view.ok_or(NoneError {})?, script))
     }
 
     pub fn get_raw_pixels(&mut self) -> Result<Vec<u8>, NoneError> {
         unsafe {
-            let bitmap_obj = ul::ulViewGetBitmap(self.view.ok_or(NoneError {})?);
+            let bitmap_obj = ul_sys::ulViewGetBitmap(self.view.ok_or(NoneError {})?);
 
-            let bitmap = ul::ulBitmapLockPixels(bitmap_obj);
-            let bitmap_size = ul::ulBitmapGetSize(bitmap_obj);
+            let bitmap = ul_sys::ulBitmapLockPixels(bitmap_obj);
+            let bitmap_size = ul_sys::ulBitmapGetSize(bitmap_obj);
 
             let bitmap_raw = std::slice::from_raw_parts_mut(bitmap as *mut u8, bitmap_size);
 
-            ul::ulBitmapUnlockPixels(bitmap_obj);
+            ul_sys::ulBitmapUnlockPixels(bitmap_obj);
 
             Ok(bitmap_raw.to_vec())
         }
@@ -572,29 +576,29 @@ impl<'a> Ultralight<'a> {
 
     pub fn write_png_to_file(&mut self, file_name: &'static str) -> Result<bool, NoneError> {
         unsafe {
-            let bitmap_obj = ul::ulViewGetBitmap(self.view.ok_or(NoneError {})?);
+            let bitmap_obj = ul_sys::ulViewGetBitmap(self.view.ok_or(NoneError {})?);
 
-            let bitmap = ul::ulBitmapLockPixels(bitmap_obj);
-            let bitmap_size = ul::ulBitmapGetSize(bitmap_obj);
+            let bitmap = ul_sys::ulBitmapLockPixels(bitmap_obj);
+            let bitmap_size = ul_sys::ulBitmapGetSize(bitmap_obj);
 
             let bitmap_raw = std::slice::from_raw_parts_mut(bitmap as *mut u8, bitmap_size);
 
             let fn_c_str = std::ffi::CString::new(file_name).unwrap();
 
-            Ok(ul::ulBitmapWritePNG(bitmap_obj, fn_c_str.as_ptr()))
+            Ok(ul_sys::ulBitmapWritePNG(bitmap_obj, fn_c_str.as_ptr()))
         }
     }
 
     pub fn is_loading(&self) -> bool {
         match self.view {
-            Some(view) => unsafe { ul::ulViewIsLoading(view) },
+            Some(view) => unsafe { ul_sys::ulViewIsLoading(view) },
             None => false,
         }
     }
 
     pub fn log_to_stdout(&mut self) -> Result<(), NoneError> {
         unsafe {
-            ul::ulViewSetAddConsoleMessageCallback(
+            ul_sys::ulViewSetAddConsoleMessageCallback(
                 self.view.ok_or(NoneError {})?,
                 Some(log_forward_cb),
                 std::ptr::null_mut() as *mut c_void,
