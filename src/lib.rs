@@ -21,10 +21,7 @@ use helpers::{create_js_function, evaluate_script, set_js_object_property};
 
 mod helpers_internal;
 use helpers_internal::{
-    unpack_window_resize_cb,
-    unpack_window_close_cb,
-    log_forward_cb,
-    unpack_closure_view_cb,
+    log_forward_cb, unpack_closure_view_cb, unpack_window_close_cb, unpack_window_resize_cb,
 };
 
 mod cursor;
@@ -131,10 +128,7 @@ impl<'a> UltralightApp<'a> {
         };
 
         unsafe {
-            let app = ul_sys::ulCreateApp(
-                ulsettings.to_ulsettings(),
-                ulconfig.to_ulconfig(),
-            );
+            let app = ul_sys::ulCreateApp(ulsettings.to_ulsettings(), ulconfig.to_ulconfig());
 
             let monitor = ul_sys::ulAppGetMainMonitor(app);
 
@@ -178,8 +172,9 @@ impl<'a> UltralightApp<'a> {
             window_flags ^= 0b1000;
         }
 
-        let window =
-            unsafe { ul_sys::ulCreateWindow(self.monitor, height, width, fullscreen, window_flags) };
+        let window = unsafe {
+            ul_sys::ulCreateWindow(self.monitor, height, width, fullscreen, window_flags)
+        };
 
         unsafe {
             ul_sys::ulAppSetWindow(self.app, window);
@@ -228,7 +223,11 @@ impl<'a> UltralightAppOverlay for UltralightApp<'a> {
     }
 
     fn overlay_get_height(&mut self) -> Result<u32, NoneError> {
-        unsafe { Ok(ul_sys::ulOverlayGetHeight(self.overlay.ok_or(NoneError {})?)) }
+        unsafe {
+            Ok(ul_sys::ulOverlayGetHeight(
+                self.overlay.ok_or(NoneError {})?,
+            ))
+        }
     }
 
     fn overlay_get_width(&mut self) -> Result<u32, NoneError> {
@@ -300,11 +299,21 @@ impl<'a> UltralightAppWindow for UltralightApp<'a> {
     }
 
     fn window_device_to_pixel(&self, val: i32) -> Result<i32, NoneError> {
-        unsafe { Ok(ul_sys::ulWindowDeviceToPixel(self.window.ok_or(NoneError {})?, val)) }
+        unsafe {
+            Ok(ul_sys::ulWindowDeviceToPixel(
+                self.window.ok_or(NoneError {})?,
+                val,
+            ))
+        }
     }
 
     fn window_pixels_to_device(&self, val: i32) -> Result<i32, NoneError> {
-        unsafe { Ok(ul_sys::ulWindowPixelsToDevice(self.window.ok_or(NoneError {})?, val)) }
+        unsafe {
+            Ok(ul_sys::ulWindowPixelsToDevice(
+                self.window.ok_or(NoneError {})?,
+                val,
+            ))
+        }
     }
 
     fn window_get_height(&self) -> Result<u32, NoneError> {
@@ -334,7 +343,7 @@ impl<'a> UltralightAppWindow for UltralightApp<'a> {
         unsafe {
             Ok(ul_sys::ulWindowSetCursor(
                 self.window.ok_or(NoneError {})?,
-                cursor as u32
+                cursor as u32,
             ))
         }
     }
@@ -342,15 +351,18 @@ impl<'a> UltralightAppWindow for UltralightApp<'a> {
 
 pub trait UltralightAppWindowCallbacks<'a> {
     fn window_set_close_callback<T>(&self, cb: &'a mut T) -> Result<(), NoneError>
-        where T: FnMut();
+    where
+        T: FnMut();
 
     fn window_set_resize_callback<T>(&self, cb: &'a mut T) -> Result<(), NoneError>
-        where T: FnMut(u32, u32);
+    where
+        T: FnMut(u32, u32);
 }
 
 impl<'a> UltralightAppWindowCallbacks<'a> for UltralightApp<'a> {
     fn window_set_close_callback<T>(&self, cb: &'a mut T) -> Result<(), NoneError>
-        where T: FnMut(),
+    where
+        T: FnMut(),
     {
         unsafe {
             let (cb_closure, cb_function) = unpack_window_close_cb(cb);
@@ -364,7 +376,8 @@ impl<'a> UltralightAppWindowCallbacks<'a> for UltralightApp<'a> {
     }
 
     fn window_set_resize_callback<T>(&self, cb: &'a mut T) -> Result<(), NoneError>
-        where T: FnMut(u32, u32),
+    where
+        T: FnMut(u32, u32),
     {
         unsafe {
             let (cb_closure, cb_function) = unpack_window_resize_cb(cb);
@@ -419,7 +432,12 @@ impl<'a> Ultralight<'a> {
 
     pub fn view(&mut self, width: u32, height: u32, transparent: bool) {
         unsafe {
-            self.view = Some(ul_sys::ulCreateView(self.renderer, width, height, transparent));
+            self.view = Some(ul_sys::ulCreateView(
+                self.renderer,
+                width,
+                height,
+                transparent,
+            ));
         }
     }
 
@@ -494,8 +512,8 @@ impl<'a> Ultralight<'a> {
     }
 
     pub fn set_finish_loading_callback<T>(&mut self, cb: &'a mut T) -> Result<(), NoneError>
-        where
-            T: FnMut(View),
+    where
+        T: FnMut(View),
     {
         let view = self.view.ok_or(NoneError {})?;
 
@@ -509,8 +527,8 @@ impl<'a> Ultralight<'a> {
     }
 
     pub fn set_dom_ready_callback<T>(&mut self, cb: &'a mut T) -> Result<(), NoneError>
-        where
-            T: FnMut(View),
+    where
+        T: FnMut(View),
     {
         let view = self.view.ok_or(NoneError {})?;
 
@@ -528,15 +546,15 @@ impl<'a> Ultralight<'a> {
         name: &'static str,
         hook: &'a mut T,
     ) -> Result<ul_sys::JSObjectRef, NoneError>
-        where
-            T: FnMut(
-                ul_sys::JSContextRef,
-                ul_sys::JSObjectRef,
-                ul_sys::JSObjectRef,
-                usize,
-                *const ul_sys::JSValueRef,
-                *mut ul_sys::JSValueRef,
-            ) -> ul_sys::JSValueRef,
+    where
+        T: FnMut(
+            ul_sys::JSContextRef,
+            ul_sys::JSObjectRef,
+            ul_sys::JSObjectRef,
+            usize,
+            *const ul_sys::JSValueRef,
+            *mut ul_sys::JSValueRef,
+        ) -> ul_sys::JSValueRef,
     {
         Ok(create_js_function(
             self.view.ok_or(NoneError {})?,
@@ -555,7 +573,10 @@ impl<'a> Ultralight<'a> {
         Ok(())
     }
 
-    pub fn evaluate_script(&mut self, script: &'static str) -> Result<ul_sys::JSValueRef, NoneError> {
+    pub fn evaluate_script(
+        &mut self,
+        script: &'static str,
+    ) -> Result<ul_sys::JSValueRef, NoneError> {
         Ok(evaluate_script(self.view.ok_or(NoneError {})?, script))
     }
 

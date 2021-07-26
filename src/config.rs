@@ -19,6 +19,7 @@ pub struct UltralightConfig {
     userStylesheet: Option<String>,
 }
 
+#[rustfmt::skip]
 impl UltralightConfig {
     pub fn new() -> UltralightConfig {
         UltralightConfig {
