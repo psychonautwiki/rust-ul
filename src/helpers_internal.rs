@@ -1,28 +1,22 @@
 use crate::View;
 
-use std::{
-    os::raw::{
-        c_void
-    },
-};
+use std::os::raw::c_void;
 
 pub unsafe fn ul_string(stref: &str) -> ul_sys::ULString {
-    let cstr = std::ffi::CString::new(
-        stref
-    ).unwrap();
+    let cstr = std::ffi::CString::new(stref).unwrap();
 
-    ul_sys::ulCreateString(
-        cstr.as_ptr()
-    )
+    ul_sys::ulCreateString(cstr.as_ptr())
 }
 
-pub unsafe fn unpack_window_close_cb<F>(closure: &mut F) -> (*mut c_void, unsafe extern "C" fn(*mut c_void))
-    where
-        F: FnMut(),
+pub unsafe fn unpack_window_close_cb<F>(
+    closure: &mut F,
+) -> (*mut c_void, unsafe extern "C" fn(*mut c_void))
+where
+    F: FnMut(),
 {
     extern "C" fn trampoline<F>(data: *mut c_void)
-        where
-            F: FnMut(),
+    where
+        F: FnMut(),
     {
         let closure: &mut F = unsafe { &mut *(data as *mut F) };
         (*closure)();
@@ -31,13 +25,18 @@ pub unsafe fn unpack_window_close_cb<F>(closure: &mut F) -> (*mut c_void, unsafe
     (closure as *mut F as *mut c_void, trampoline::<F>)
 }
 
-pub unsafe fn unpack_window_resize_cb<F>(closure: &mut F) -> (*mut c_void, unsafe extern "C" fn(*mut c_void, width: u32, height: u32))
-    where
-        F: FnMut(u32, u32),
+pub unsafe fn unpack_window_resize_cb<F>(
+    closure: &mut F,
+) -> (
+    *mut c_void,
+    unsafe extern "C" fn(*mut c_void, width: u32, height: u32),
+)
+where
+    F: FnMut(u32, u32),
 {
     extern "C" fn trampoline<F>(data: *mut c_void, width: u32, height: u32)
-        where
-            F: FnMut(u32, u32),
+    where
+        F: FnMut(u32, u32),
     {
         let closure: &mut F = unsafe { &mut *(data as *mut F) };
         (*closure)(width, height);
@@ -48,13 +47,15 @@ pub unsafe fn unpack_window_resize_cb<F>(closure: &mut F) -> (*mut c_void, unsaf
 
 // All callbacks that accept take a (view: ULView) argument
 
-pub unsafe fn unpack_closure_view_cb<F>(closure: &mut F) -> (*mut c_void, unsafe extern "C" fn(*mut c_void, View))
-    where
-        F: FnMut(View),
+pub unsafe fn unpack_closure_view_cb<F>(
+    closure: &mut F,
+) -> (*mut c_void, unsafe extern "C" fn(*mut c_void, View))
+where
+    F: FnMut(View),
 {
     extern "C" fn trampoline<F>(data: *mut c_void, n: View)
-        where
-            F: FnMut(View),
+    where
+        F: FnMut(View),
     {
         let closure: &mut F = unsafe { &mut *(data as *mut F) };
         (*closure)(n);
@@ -70,19 +71,19 @@ type ClosureHookCallbackSig = unsafe extern "C" fn(
     ul_sys::JSObjectRef,
     usize,
     *const ul_sys::JSValueRef,
-    *mut ul_sys::JSValueRef
+    *mut ul_sys::JSValueRef,
 ) -> ul_sys::JSValueRef;
 
 pub unsafe fn unpack_closure_hook_cb<F>(closure: &mut F) -> (*mut c_void, ClosureHookCallbackSig)
-    where
-        F: FnMut(
-            ul_sys::JSContextRef,
-            ul_sys::JSObjectRef,
-            ul_sys::JSObjectRef,
-            usize,
-            *const ul_sys::JSValueRef,
-            *mut ul_sys::JSValueRef,
-        ) -> ul_sys::JSValueRef,
+where
+    F: FnMut(
+        ul_sys::JSContextRef,
+        ul_sys::JSObjectRef,
+        ul_sys::JSObjectRef,
+        usize,
+        *const ul_sys::JSValueRef,
+        *mut ul_sys::JSValueRef,
+    ) -> ul_sys::JSValueRef,
 {
     unsafe extern "C" fn trampoline<F>(
         ctx: ul_sys::JSContextRef,
@@ -92,15 +93,15 @@ pub unsafe fn unpack_closure_hook_cb<F>(closure: &mut F) -> (*mut c_void, Closur
         arguments: *const ul_sys::JSValueRef,
         exception: *mut ul_sys::JSValueRef,
     ) -> ul_sys::JSValueRef
-        where
-            F: FnMut(
-                ul_sys::JSContextRef,
-                ul_sys::JSObjectRef,
-                ul_sys::JSObjectRef,
-                usize,
-                *const ul_sys::JSValueRef,
-                *mut ul_sys::JSValueRef,
-            ) -> ul_sys::JSValueRef,
+    where
+        F: FnMut(
+            ul_sys::JSContextRef,
+            ul_sys::JSObjectRef,
+            ul_sys::JSObjectRef,
+            usize,
+            *const ul_sys::JSValueRef,
+            *mut ul_sys::JSValueRef,
+        ) -> ul_sys::JSValueRef,
     {
         let closure: &mut F = &mut *(ul_sys::JSObjectGetPrivate(function) as *mut F);
 
@@ -110,7 +111,7 @@ pub unsafe fn unpack_closure_hook_cb<F>(closure: &mut F) -> (*mut c_void, Closur
             thisObject,
             argumentCount,
             arguments,
-            exception
+            exception,
         )
     }
 
@@ -122,12 +123,12 @@ static msg_parsing_failed: &'static str = "!parsing failed!";
 pub unsafe extern "C" fn log_forward_cb(
     user_data: *mut ::std::os::raw::c_void,
     caller: View,
-    source: ul_sys::ULMessageSource,           /* u32 */
-    level: ul_sys::ULMessageLevel,             /* u32 */
-    message: ul_sys::ULString,                 /* *mut C_String aka *mut u8 */
-    line_number: ::std::os::raw::c_uint,    /* u32 */
-    column_number: ::std::os::raw::c_uint,  /* u32 */
-    source_id: ul_sys::ULString,               /* *mut C_String aka *mut u8 */
+    source: ul_sys::ULMessageSource,       /* u32 */
+    level: ul_sys::ULMessageLevel,         /* u32 */
+    message: ul_sys::ULString,             /* *mut C_String aka *mut u8 */
+    line_number: ::std::os::raw::c_uint,   /* u32 */
+    column_number: ::std::os::raw::c_uint, /* u32 */
+    source_id: ul_sys::ULString,           /* *mut C_String aka *mut u8 */
 ) {
     let level = match level {
         ul_sys::ULMessageLevel_kMessageLevel_Log => "log",

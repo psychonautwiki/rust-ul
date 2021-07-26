@@ -48,8 +48,8 @@ impl JSObject {
     ///
     /// [`JSString`]: struct.JSString.html
     pub fn has_property<S>(&self, name: S) -> bool
-        where
-            S: Into<JSString>,
+    where
+        S: Into<JSString>,
     {
         unsafe { ul_sys::JSObjectHasProperty(self.value.ctx, self.raw, name.into().raw) }
     }
@@ -76,12 +76,13 @@ impl JSObject {
     ///
     /// [`JSString`]: struct.JSString.html
     pub fn get_property<S>(&self, name: S) -> JSValue
-        where
-            S: Into<JSString>,
+    where
+        S: Into<JSString>,
     {
         let mut e: ul_sys::JSValueRef = ptr::null_mut();
-        let v =
-            unsafe { ul_sys::JSObjectGetProperty(self.value.ctx, self.raw, name.into().raw, &mut e) };
+        let v = unsafe {
+            ul_sys::JSObjectGetProperty(self.value.ctx, self.raw, name.into().raw, &mut e)
+        };
         JSValue {
             raw: v,
             ctx: self.value.ctx,
@@ -130,7 +131,8 @@ impl JSObject {
     /// ```
     pub fn get_property_at_index(&self, index: u32) -> JSValue {
         let mut e: ul_sys::JSValueRef = ptr::null_mut();
-        let v = unsafe { ul_sys::JSObjectGetPropertyAtIndex(self.value.ctx, self.raw, index, &mut e) };
+        let v =
+            unsafe { ul_sys::JSObjectGetPropertyAtIndex(self.value.ctx, self.raw, index, &mut e) };
         JSValue {
             raw: v,
             ctx: self.value.ctx,

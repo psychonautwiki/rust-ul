@@ -5,6 +5,7 @@ pub struct UltralightSettings {
     fileSystemPath: Option<String>,
 }
 
+#[rustfmt::skip]
 impl UltralightSettings {
     pub fn new() -> UltralightSettings {
         UltralightSettings {

@@ -9,7 +9,12 @@
 //! Evaluate JavaScript programs from within an app, and support
 //! JavaScript scripting of your app.
 
-#![deny(trivial_numeric_casts, unstable_features, unused_import_braces, unused_qualifications)]
+#![deny(
+    trivial_numeric_casts,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications
+)]
 
 mod base;
 mod class;
