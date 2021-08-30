@@ -27,18 +27,6 @@ pub fn create_js_function<T> (
             attributes: 0,
             className: classname_str.as_ptr(),
             parentClass: std::ptr::null_mut() as ul_sys::JSClassRef,
-            staticValues: std::ptr::null() as *const ul_sys::JSStaticValue,
-            staticFunctions: std::ptr::null() as *const ul_sys::JSStaticFunction,
-            initialize: None,
-            hasProperty: None,
-            getProperty: None,
-            setProperty: None,
-            deleteProperty: None,
-            getPropertyNames: None,
-            callAsConstructor: None,
-            hasInstance: None,
-            convertToType: None,
-            finalize: None,
             callAsFunction: Some(hook_function),
             // need to implement drop!
             //finalize: Some(|| std::mem::drop(jsclass)),
@@ -62,7 +50,7 @@ pub fn getJSContextFromView(
     view: crate::View
 ) -> (ul_sys::JSContextRef, ul_sys::JSObjectRef) {
     unsafe {
-        let jsgctx = ul_sys::ulViewGetJSContext(view);
+        let jsgctx = ul_sys::ulViewLockJSContext(view);
         let jsgctx_object = ul_sys::JSContextGetGlobalObject(jsgctx);
 
         (jsgctx, jsgctx_object)

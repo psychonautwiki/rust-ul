@@ -155,7 +155,7 @@ pub unsafe extern "C" fn log_forward_cb(
 
     let message = match String::from_utf16(std::slice::from_raw_parts_mut(
         ul_sys::ulStringGetData(message),
-        ul_sys::ulStringGetLength(message),
+        ul_sys::ulStringGetLength(message) as usize,
     )) {
         Ok(msg) => msg,
         Err(_) => msg_parsing_failed.to_string(),
@@ -163,7 +163,7 @@ pub unsafe extern "C" fn log_forward_cb(
 
     let source_id = match String::from_utf16(std::slice::from_raw_parts_mut(
         ul_sys::ulStringGetData(source_id),
-        ul_sys::ulStringGetLength(source_id),
+        ul_sys::ulStringGetLength(source_id) as usize,
     )) {
         Ok(src) => src,
         Err(_) => msg_parsing_failed.to_string(),

@@ -13,13 +13,13 @@ impl JSString {
     pub fn to_string(&self) -> String {
         unsafe {
             let max_size = ul_sys::JSStringGetMaximumUTF8CStringSize(self.raw);
-            let mut buffer: Vec<u8> = Vec::with_capacity(max_size);
+            let mut buffer: Vec<u8> = Vec::with_capacity(max_size as usize);
             let actual_size = ul_sys::JSStringGetUTF8CString(
                 self.raw,
                 buffer.as_mut_ptr() as *mut ::std::os::raw::c_char,
                 max_size,
             );
-            buffer.set_len(actual_size - 1);
+            buffer.set_len(actual_size as usize - 1);
             String::from_utf8(buffer).unwrap()
         }
     }

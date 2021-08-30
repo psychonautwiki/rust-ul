@@ -12,7 +12,8 @@ pub extern crate ul_sys;
 #[macro_use]
 mod config_macros;
 
-pub mod config;
+pub mod ul_config;
+pub mod ul_view_config;
 pub mod settings;
 
 pub mod helpers;
@@ -35,7 +36,7 @@ use std::marker::PhantomData;
 use std::os::raw::c_void;
 
 pub type App = ul_sys::ULApp;
-pub type Config = config::UltralightConfig;
+pub type Config = ul_config::UltralightConfig;
 pub type Settings = settings::UltralightSettings;
 pub type Monitor = ul_sys::ULMonitor;
 pub type Overlay = ul_sys::ULOverlay;
@@ -300,11 +301,11 @@ impl<'a> UltralightAppWindow for UltralightApp<'a> {
     }
 
     fn window_device_to_pixel(&self, val: i32) -> Result<i32, NoneError> {
-        unsafe { Ok(ul_sys::ulWindowDeviceToPixel(self.window.ok_or(NoneError {})?, val)) }
+        unsafe { Ok(ul_sys::ulWindowScreenToPixels(self.window.ok_or(NoneError {})?, val)) }
     }
 
     fn window_pixels_to_device(&self, val: i32) -> Result<i32, NoneError> {
-        unsafe { Ok(ul_sys::ulWindowPixelsToDevice(self.window.ok_or(NoneError {})?, val)) }
+        unsafe { Ok(ul_sys::ulWindowPixelsToScreen(self.window.ok_or(NoneError {})?, val)) }
     }
 
     fn window_get_height(&self) -> Result<u32, NoneError> {
@@ -566,7 +567,10 @@ impl<'a> Ultralight<'a> {
             let bitmap = ul_sys::ulBitmapLockPixels(bitmap_obj);
             let bitmap_size = ul_sys::ulBitmapGetSize(bitmap_obj);
 
-            let bitmap_raw = std::slice::from_raw_parts_mut(bitmap as *mut u8, bitmap_size);
+            let bitmap_raw = std::slice::from_raw_parts_mut(
+                bitmap as *mut u8,
+                bitmap_size as usize,
+            );
 
             ul_sys::ulBitmapUnlockPixels(bitmap_obj);
 
@@ -581,7 +585,10 @@ impl<'a> Ultralight<'a> {
             let bitmap = ul_sys::ulBitmapLockPixels(bitmap_obj);
             let bitmap_size = ul_sys::ulBitmapGetSize(bitmap_obj);
 
-            let bitmap_raw = std::slice::from_raw_parts_mut(bitmap as *mut u8, bitmap_size);
+            let bitmap_raw = std::slice::from_raw_parts_mut(
+                bitmap as *mut u8,
+                bitmap_size as usize,
+            );
 
             let fn_c_str = std::ffi::CString::new(file_name).unwrap();
 

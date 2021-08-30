@@ -159,9 +159,16 @@ impl Iterator for JSObjectPropertyNameIter {
     type Item = JSString;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.idx < unsafe { ul_sys::JSPropertyNameArrayGetCount(self.raw) } {
-            let name = unsafe { ul_sys::JSPropertyNameArrayGetNameAtIndex(self.raw, self.idx) };
+        if self.idx < unsafe { ul_sys::JSPropertyNameArrayGetCount(self.raw) } as usize {
+            let name = unsafe {
+                ul_sys::JSPropertyNameArrayGetNameAtIndex(
+                    self.raw,
+                    self.idx as u64,
+                )
+            };
+
             self.idx += 1;
+
             Some(JSString { raw: name })
         } else {
             None
@@ -169,7 +176,7 @@ impl Iterator for JSObjectPropertyNameIter {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let sz = unsafe { ul_sys::JSPropertyNameArrayGetCount(self.raw) };
+        let sz = unsafe { ul_sys::JSPropertyNameArrayGetCount(self.raw) } as usize;
         (sz - self.idx, Some(sz))
     }
 }
